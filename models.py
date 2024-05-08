@@ -18,6 +18,41 @@ DEFAULT_HEADER_IMAGE_URL = (
     "mat&fit=crop&w=2070&q=80")
 
 
+class Like(db.Model):
+
+    __tablename__ = 'likes'
+
+    __table_args__ = (
+        db.UniqueConstraint("user_like_id", "message_like_id"),
+    )
+
+    user_like_id = db.mapped_column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete="cascade"),
+        primary_key=True,
+        nullable=False,
+    )
+
+    message_like_id = db.mapped_column(
+        db.Integer,
+        db.ForeignKey('messages.id', ondelete="cascade"),
+        primary_key=True,
+        nullable=False,
+    )
+
+    user_likes = db.relationship(
+        "User",
+        foreign_keys=[user_like_id],
+        back_populates="likes",
+    )
+
+    message_likes = db.relationship(
+        "Message",
+        foreign_keys=[message_like_id],
+        back_populates="user_likes",
+    )
+
+
 class Follow(db.Model):
     """Connection of a follower <-> followed_user."""
 
@@ -123,6 +158,13 @@ class User(db.Model):
         "Follow",
         foreign_keys=[Follow.user_being_followed_id],
         back_populates="following_user",
+        cascade="all, delete-orphan",
+    )
+
+    likes = db.relationship(
+        'Like',
+        foreign_keys=[Like.user_like_id, Like.message_like_id],
+        back_populates='user_likes',
         cascade="all, delete-orphan",
     )
 
@@ -244,4 +286,11 @@ class Message(db.Model):
     user = db.relationship(
         "User",
         back_populates="messages",
+    )
+
+    user_likes = db.relationship(
+        'Like',
+        foreign_keys=[Like.user_like_id, Like.message_like_id],
+        back_populates='message_likes',
+        cascade="all, delete-orphan",
     )
