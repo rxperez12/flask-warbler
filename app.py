@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, CsrfForm
 from models import db, dbx, User, Message
 
 load_dotenv()
@@ -120,6 +120,11 @@ def logout():
 
     # IMPLEMENT THIS AND FIX BUG
     # DO NOT CHANGE METHOD ON ROUTE
+
+    if form.validate_on_submit():
+        do_logout()
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!LOGGED OUT SUCCESSFULLY')
+        return redirect('/')
 
 
 ##############################################################################

@@ -191,11 +191,11 @@ class User(db.Model):
         """Stop following another user."""
 
         q = (db
-            .delete(Follow)
-            .filter_by(
-                user_being_followed_id=other_user.id,
-                user_following_id=self.id)
-        )
+             .delete(Follow)
+             .filter_by(
+                 user_being_followed_id=other_user.id,
+                 user_following_id=self.id)
+             )
         dbx(q)
 
     def is_followed_by(self, other_user):
