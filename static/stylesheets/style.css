@@ -301,6 +301,16 @@ nav + .container {
   color: #657786;
 }
 
+.nav-logout {
+  color: #66757f;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.nav-logout:hover {
+  color: #1c94e0;
+}
+
 /* ==================== User cards on follower/following pages */
 
 .user-card {
