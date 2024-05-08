@@ -377,10 +377,16 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of self & followed_users
     """
-
+    
+    
     if g.user:
+        following = g.user.following
+        following_ids = [follower.id for follower in following]
+        
         q = (
             db.select(Message)
+            .where(Message.user_id.in_(following_ids) 
+                   | (Message.user_id == g.user.id))
             .order_by(Message.timestamp.desc())
             .limit(100)
         )
