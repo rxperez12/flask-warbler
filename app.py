@@ -7,7 +7,8 @@ from werkzeug.exceptions import Unauthorized
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, CsrfForm, UserEditForm
-from models import db, dbx, User, Message
+from models import db, dbx, User, Message, DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL
+
 
 load_dotenv()
 
@@ -124,12 +125,9 @@ def logout():
 
     form = g.csrf_form
 
-    # IMPLEMENT THIS AND FIX BUG
-    # DO NOT CHANGE METHOD ON ROUTE
-
     if form.validate_on_submit():
         do_logout()
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!LOGGED OUT SUCCESSFULLY')
+        
         return redirect('/login')
 
     else:
@@ -249,8 +247,11 @@ def stop_following(follow_id):
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
-def profile():
-    """Update profile for current user."""
+def show_or_process_edit_profile_form():
+    """Update profile for current user.
+    Redirects to base url if access is unauthorized
+    Redirects to user detail page on successful submission
+    """
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -262,20 +263,25 @@ def profile():
         user = User.authenticate(g.user.username, form.password.data)
 
         if (user):
-            g.user.username = form.username.data or g.user.username
-            g.user.email = form.email.data or g.user.email
-            g.user.image_url = form.image_url.data or g.user.image_url
-            g.user.header_image_url = form.header_image_url.data or g.user.header_image_url
-            g.user.bio = form.bio.data or g.user.bio
+            g.user.username = form.username.data
+            g.user.email = form.email.data
+            g.user.image_url = form.image_url.data or DEFAULT_IMAGE_URL
+            g.user.header_image_url = form.header_image_url.data or DEFAULT_HEADER_IMAGE_URL
+            g.user.bio = form.bio.data
+            
+            try:
+                db.session.commit()
+            except IntegrityError:
+                flash("Username already taken", "danger")
+                db.session.rollback()
+                return render_template('users/edit.jinja', form=form)
 
-            db.session.commit()
             return redirect(f"/users/{g.user.id}")
+        
         else:
-            flash('Incorrect Password.Please try again.')
-            return render_template('/users/edit.jinja', form=form)
+            flash('Incorrect Password. Please try again.', 'danger')
 
-    else:
-        return render_template('/users/edit.jinja', form=form)
+    return render_template('/users/edit.jinja', form=form)
 
 
 @app.post('/users/delete')
@@ -284,22 +290,19 @@ def delete_user():
 
     Redirect to signup page.
     """
-
-    if not g.user:
+    
+    form = g.csrf_form
+    
+    if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    
+    do_logout()
+    db.session.delete(g.user)
+    db.session.commit()
 
-    if form.validate_on_input():
-        do_logout()
-        db.session.delete(g.user)
-        db.session.commit()
-
-        return redirect("/signup")
-
-    else:
-        raise Unauthorized()
+    return redirect("/signup")
 
 
 ##############################################################################
@@ -348,22 +351,22 @@ def delete_message(message_id):
     Check that this message was written by the current user.
     Redirect to user page on success.
     """
-
-    if not g.user:
+    
+    form = g.csrf_form
+    
+    if not g.user and not form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect("/")  
+    
+    msg = db.get_or_404(Message, message_id)
+    if msg.user_id != g.user.id:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+        
+    db.session.delete(msg)
+    db.session.commit()
 
-    form = g.csrf_form
-
-    if form.validate_on_submit():
-        msg = db.get_or_404(Message, message_id)
-        db.session.delete(msg)
-        db.session.commit()
-
-        return redirect(f"/users/{g.user.id}")
-
-    else:
-        raise Unauthorized()
+    return redirect(f"/users/{g.user.id}")
 
 
 ##############################################################################
