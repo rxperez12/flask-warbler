@@ -6,7 +6,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.exceptions import Unauthorized
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm, CsrfForm
+from forms import UserAddForm, LoginForm, MessageForm, CsrfForm, UserEditForm
 from models import db, dbx, User, Message
 
 load_dotenv()
@@ -38,6 +38,7 @@ def add_user_to_g():
 
     else:
         g.user = None
+
 
 @app.before_request
 def add_csrf_form_to_g():
@@ -130,10 +131,10 @@ def logout():
         do_logout()
         print('!!!!!!!!!!!!!!!!!!!!!!!!!LOGGED OUT SUCCESSFULLY')
         return redirect('/login')
-    
+
     else:
         raise Unauthorized()
-    
+
 
 ##############################################################################
 # General user routes:
@@ -209,16 +210,16 @@ def start_following(follow_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     form = g.csrf_form
-    
+
     if form.validate_on_submit():
         followed_user = db.get_or_404(User, follow_id)
         g.user.follow(followed_user)
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}/following")
-    
+
     else:
         raise Unauthorized()
 
@@ -233,16 +234,16 @@ def stop_following(follow_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     form = g.csrf_form
-    
+
     if form.validate_on_submit():
         followed_user = db.get_or_404(User, follow_id)
         g.user.unfollow(followed_user)
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}/following")
-    
+
     else:
         raise Unauthorized()
 
@@ -251,7 +252,26 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+    form = UserEditForm(obj=g.user)
+
+    if form.validate_on_submit():
+        user = User.authenticate(g.user.username, form.password.data)
+
+        if (user):
+            g.user.username = form.username.data or g.user.username
+            g.user.email = form.email.data or g.user.email
+            g.user.image_url = form.image_url.data or g.user.image_url
+            g.user.header_image_url = form.header_image_url.data or g.user.header_image_url
+            g.user.bio = form.bio.data or g.user.bio
+
+            db.session.commit()
+            return redirect(f"/users/{g.user.id}")
+        else:
+            flash('Incorrect Password.Please try again.')
+            return render_template('/users/edit.jinja', form=form)
+
+    else:
+        return render_template('/users/edit.jinja', form=form)
 
 
 @app.post('/users/delete')
@@ -264,16 +284,16 @@ def delete_user():
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     form = g.csrf_form
-    
+
     if form.validate_on_input():
         do_logout()
         db.session.delete(g.user)
         db.session.commit()
 
         return redirect("/signup")
-    
+
     else:
         raise Unauthorized()
 
@@ -313,7 +333,7 @@ def show_message(message_id):
         return redirect("/")
 
     msg = db.get_or_404(Message, message_id)
-    
+
     return render_template('messages/show.jinja', message=msg)
 
 
@@ -328,19 +348,18 @@ def delete_message(message_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     form = g.csrf_form
-    
+
     if form.validate_on_submit():
         msg = db.get_or_404(Message, message_id)
         db.session.delete(msg)
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
-    
-    else: 
-        raise Unauthorized()
 
+    else:
+        raise Unauthorized()
 
 
 ##############################################################################

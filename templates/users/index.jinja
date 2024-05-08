@@ -13,31 +13,25 @@
         <div class="card user-card">
           <div class="card-inner">
             <div class="image-wrapper">
-              <img src="{{ user.header_image_url }}"
-                   alt=""
-                   class="card-hero">
+              <img src="{{ user.header_image_url }}" alt="" class="card-hero">
             </div>
             <div class="card-contents">
               <a href="/users/{{ user.id }}" class="card-link">
-                <img src="{{ user.image_url }}"
-                     alt="Image for {{ user.username }}"
-                     class="card-image">
+                <img src="{{ user.image_url }}" alt="Image for {{ user.username }}" class="card-image">
                 <p>@{{ user.username }}</p>
               </a>
 
               {% if g.user %}
               {% if g.user.is_following(user) %}
-              <form method="POST"
-                    action="/users/stop-following/{{ user.id }}">
-                    {{ g.csrf_form.hidden_tag() }}
+              <form method="POST" action="/users/stop-following/{{ user.id }}">
+                {{ g.csrf_form.hidden_tag() }}
                 <button class="btn btn-primary btn-sm">
                   Unfollow
                 </button>
               </form>
               {% else %}
-              <form method="POST"
-                    action="/users/follow/{{ user.id }}">
-                    {{ g.csrf_form.hidden_tag() }}
+              <form method="POST" action="/users/follow/{{ user.id }}">
+                {{ g.csrf_form.hidden_tag() }}
                 <button class="btn btn-outline-primary btn-sm">
                   Follow
                 </button>
@@ -46,7 +40,7 @@
               {% endif %}
 
             </div>
-            <p class="card-bio">BIO HERE</p>
+            <p class="card-bio">{{ user.bio }}</p>
           </div>
         </div>
       </div>
