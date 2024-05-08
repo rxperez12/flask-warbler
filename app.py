@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
+from werkzeug.exceptions import Unauthorized
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, CsrfForm
@@ -37,6 +38,10 @@ def add_user_to_g():
 
     else:
         g.user = None
+
+@app.before_request
+def add_csrf_form_to_g():
+    g.csrf_form = CsrfForm()
 
 
 def do_login(user):
@@ -124,8 +129,11 @@ def logout():
     if form.validate_on_submit():
         do_logout()
         print('!!!!!!!!!!!!!!!!!!!!!!!!!LOGGED OUT SUCCESSFULLY')
-        return redirect('/')
-
+        return redirect('/login')
+    
+    else:
+        raise Unauthorized()
+    
 
 ##############################################################################
 # General user routes:
@@ -201,13 +209,18 @@ def start_following(follow_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+    
+    form = g.csrf_form
+    
+    if form.validate_on_submit():
+        followed_user = db.get_or_404(User, follow_id)
+        g.user.follow(followed_user)
+        db.session.commit()
 
-    followed_user = db.get_or_404(User, follow_id)
-
-    g.user.follow(followed_user)
-    db.session.commit()
-
-    return redirect(f"/users/{g.user.id}/following")
+        return redirect(f"/users/{g.user.id}/following")
+    
+    else:
+        raise Unauthorized()
 
 
 @app.post('/users/stop-following/<int:follow_id>')
@@ -220,13 +233,18 @@ def stop_following(follow_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+    
+    form = g.csrf_form
+    
+    if form.validate_on_submit():
+        followed_user = db.get_or_404(User, follow_id)
+        g.user.unfollow(followed_user)
+        db.session.commit()
 
-    followed_user = db.get_or_404(User, follow_id)
-
-    g.user.unfollow(followed_user)
-    db.session.commit()
-
-    return redirect(f"/users/{g.user.id}/following")
+        return redirect(f"/users/{g.user.id}/following")
+    
+    else:
+        raise Unauthorized()
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
@@ -246,13 +264,18 @@ def delete_user():
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+    
+    form = g.csrf_form
+    
+    if form.validate_on_input():
+        do_logout()
+        db.session.delete(g.user)
+        db.session.commit()
 
-    do_logout()
-
-    db.session.delete(g.user)
-    db.session.commit()
-
-    return redirect("/signup")
+        return redirect("/signup")
+    
+    else:
+        raise Unauthorized()
 
 
 ##############################################################################
@@ -290,6 +313,7 @@ def show_message(message_id):
         return redirect("/")
 
     msg = db.get_or_404(Message, message_id)
+    
     return render_template('messages/show.jinja', message=msg)
 
 
@@ -304,12 +328,19 @@ def delete_message(message_id):
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+    
+    form = g.csrf_form
+    
+    if form.validate_on_submit():
+        msg = db.get_or_404(Message, message_id)
+        db.session.delete(msg)
+        db.session.commit()
 
-    msg = db.get_or_404(Message, message_id)
-    db.session.delete(msg)
-    db.session.commit()
+        return redirect(f"/users/{g.user.id}")
+    
+    else: 
+        raise Unauthorized()
 
-    return redirect(f"/users/{g.user.id}")
 
 
 ##############################################################################
