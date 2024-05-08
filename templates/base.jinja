@@ -51,7 +51,7 @@
 
         <li>
           <form action="/logout" method="POST">
-
+              {{ g.csrf_form.hidden_tag() }}
             <button class="btn-link"> Logout
             </button>
             <!-- TODO: fix styling later-->
