@@ -46,23 +46,25 @@
     <ul class="list-group" id="messages">
       {% for msg in messages %}
       <li class="list-group-item">
-      {% if g.user %}
+        {# {% if g.user %}
         <form action="/messages/{{ msg.id }}/like" method="POST" class="like-message">
-        {{ g.csrf_form.hidden_tag() }}
+          {{ g.csrf_form.hidden_tag() }}
           <button class="btn"><i class="bi bi-star"></i></button>
         </form>
-      {% endif %}
+        {% endif %}
         <a href="/messages/{{ msg.id }}" class="message-link">
-        <a href="/users/{{ msg.user.id }}">
-          <img src="{{ msg.user.image_url }}" alt="" class="timeline-image">
-        </a>
-        <div class="message-area">
-          <a href="/users/{{ msg.user.id }}">@{{ msg.user.username }}</a>
-          <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
-          <p>{{ msg.text }}</p>
-        </div>
-      </li>
-      {# {% include "/messages/message_template.jinja" %} #}
+          <a href="/users/{{ msg.user.id }}">
+            <img src="{{ msg.user.image_url }}" alt="" class="timeline-image">
+          </a>
+          <div class="message-area">
+            <a href="/users/{{ msg.user.id }}">@{{ msg.user.username }}</a>
+            <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
+            <p>{{ msg.text }}</p>
+          </div>
+      </li> #}
+      {% with msg=msg %}
+      {% include "/messages/message_template.jinja" %}
+      {% endwith %}
       {% endfor %}
     </ul>
   </div>
