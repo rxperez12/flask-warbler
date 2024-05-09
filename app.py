@@ -127,7 +127,7 @@ def logout():
 
     if form.validate_on_submit():
         do_logout()
-        
+
         return redirect('/login')
 
     else:
@@ -268,7 +268,7 @@ def show_or_process_edit_profile_form():
             g.user.image_url = form.image_url.data or DEFAULT_IMAGE_URL
             g.user.header_image_url = form.header_image_url.data or DEFAULT_HEADER_IMAGE_URL
             g.user.bio = form.bio.data
-            
+
             try:
                 db.session.commit()
             except IntegrityError:
@@ -277,7 +277,7 @@ def show_or_process_edit_profile_form():
                 return render_template('users/edit.jinja', form=form)
 
             return redirect(f"/users/{g.user.id}")
-        
+
         else:
             flash('Incorrect Password. Please try again.', 'danger')
 
@@ -290,14 +290,13 @@ def delete_user():
 
     Redirect to signup page.
     """
-    
+
     form = g.csrf_form
-    
+
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    
     do_logout()
     db.session.delete(g.user)
     db.session.commit()
@@ -351,54 +350,70 @@ def delete_message(message_id):
     Check that this message was written by the current user.
     Redirect to user page on success.
     """
-    
+
     form = g.csrf_form
-    
+
     if not g.user and not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
-        return redirect("/")  
-    
+        return redirect("/")
+
     msg = db.get_or_404(Message, message_id)
     if msg.user_id != g.user.id:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-        
+
     db.session.delete(msg)
     db.session.commit()
 
     return redirect(f"/users/{g.user.id}")
 
+
 @app.post("/messages/<int:msg_id>/like")
 def add_message_like(msg_id):
     """Adds message to user's liked messages"""
-    
+
     form = g.csrf_form
-    
+
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     new_like = Like(user_like_id=g.user.id, message_like_id=msg_id)
     db.session.add(new_like)
-    db.session.commit()
-    
-    return redirect("/") #TODO: change to likes route
+
+    try:
+        db.session.commit()
+
+    except IntegrityError:
+        flash("Already liked message", "danger")
+        db.session.rollback()
+        return redirect('/')
+
+    return redirect("/")  # TODO: change to likes route
+
 
 @app.post("/messages/<int:msg_id>/unlike")
 def remove_message_like(msg_id):
     """Removes message from user's liked messages"""
-    
+
     form = g.csrf_form
-    
+
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", 'danger')
         return redirect("/")
-    
+
     q_like = db.get_or_404(Like, (g.user.id, msg_id))
-    db.session.remove(q_like)
-    db.session.commit()
-    
-    return redirect("/") #TODO: change to likes route
+    db.session.delete(q_like)
+
+    try:
+        db.session.commit()
+
+    except IntegrityError:
+        flash("Already unliked message", "danger")
+        db.session.rollback()
+        return redirect('/')
+
+    return redirect("/")  # TODO: change to likes route
 
 ##############################################################################
 # Homepage and error pages
@@ -411,15 +426,14 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of self & followed_users
     """
-    
-    
+
     if g.user:
         following = g.user.following
         following_ids = [follower.id for follower in following]
-        
+
         q = (
             db.select(Message)
-            .where(Message.user_id.in_(following_ids) 
+            .where(Message.user_id.in_(following_ids)
                    | (Message.user_id == g.user.id))
             .order_by(Message.timestamp.desc())
             .limit(100)

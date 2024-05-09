@@ -175,10 +175,15 @@ class User(db.Model):
     @property
     def followers(self):
         return [follow.followed_user for follow in self.followers_users]
-    
+
     @property
     def liked_messages(self):
         return [like.message_likes for like in self.likes]
+
+    @property
+    def liked_messages_ids(self):
+        liked_messages = self.liked_messages
+        return [message.id for message in liked_messages]
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
