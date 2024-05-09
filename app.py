@@ -7,7 +7,7 @@ from werkzeug.exceptions import Unauthorized
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, CsrfForm, UserEditForm
-from models import db, dbx, User, Message, DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL
+from models import db, dbx, User, Message, Like, DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL
 
 
 load_dotenv()
@@ -368,6 +368,37 @@ def delete_message(message_id):
 
     return redirect(f"/users/{g.user.id}")
 
+@app.post("/messages/<int:msg_id>/like")
+def add_message_like(msg_id):
+    """Adds message to user's liked messages"""
+    
+    form = g.csrf_form
+    
+    if not g.user or not form.validate_on_submit():
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    new_like = Like(user_like_id=g.user.id, message_like_id=msg_id)
+    db.session.add(new_like)
+    db.session.commit()
+    
+    return redirect("/") #TODO: change to likes route
+
+@app.post("/messages/<int:msg_id>/unlike")
+def remove_message_like(msg_id):
+    """Removes message from user's liked messages"""
+    
+    form = g.csrf_form
+    
+    if not g.user or not form.validate_on_submit():
+        flash("Access unauthorized.", 'danger')
+        return redirect("/")
+    
+    q_like = db.get_or_404(Like, (g.user.id, msg_id))
+    db.session.remove(q_like)
+    db.session.commit()
+    
+    return redirect("/") #TODO: change to likes route
 
 ##############################################################################
 # Homepage and error pages
