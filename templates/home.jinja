@@ -46,7 +46,13 @@
     <ul class="list-group" id="messages">
       {% for msg in messages %}
       <li class="list-group-item">
-        <a href="/messages/{{ msg.id }}" class="message-link" />
+      {% if g.user %}
+        <form action="/messages/{{ msg.id }}/like" method="POST" class="like-message">
+        {{ g.csrf_form.hidden_tag() }}
+          <button class="btn"><i class="bi bi-star"></i></button>
+        </form>
+      {% endif %}
+        <a href="/messages/{{ msg.id }}" class="message-link">
         <a href="/users/{{ msg.user.id }}">
           <img src="{{ msg.user.image_url }}" alt="" class="timeline-image">
         </a>
