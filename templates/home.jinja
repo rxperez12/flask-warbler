@@ -1,4 +1,5 @@
 {% extends 'base.jinja' %}
+{% from "/messages/message_macro.jinja" import build_message_list %}
 {% block content %}
 <div class="row">
 
@@ -44,8 +45,9 @@
 
   <div class="col-lg-6 col-md-8 col-sm-12">
     <ul class="list-group" id="messages">
-      {% for msg in messages %}
-      <li class="list-group-item">
+      {{ build_message_list(messages) }}
+      {# {% for msg in messages %}
+      <li class="list-group-item"> #}
         {# {% if g.user %}
         <form action="/messages/{{ msg.id }}/like" method="POST" class="like-message">
           {{ g.csrf_form.hidden_tag() }}
@@ -62,10 +64,10 @@
             <p>{{ msg.text }}</p>
           </div>
       </li> #}
-      {% with msg=msg %}
+      {# {% with msg=msg %}
       {% include "/messages/message_template.jinja" %}
       {% endwith %}
-      {% endfor %}
+      {% endfor %} #}
     </ul>
   </div>
 
