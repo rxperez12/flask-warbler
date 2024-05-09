@@ -283,14 +283,15 @@ def show_or_process_edit_profile_form():
 
     return render_template('/users/edit.jinja', form=form)
 
+
 @app.get("/users/<int:user_id>/likes")
 def show_user_likes(user_id):
     """Show all messages liked by the current user"""
-    
-    if not g.user: # or g.user.id != user_id  NOTE: make likes private/public?
+
+    if not g.user:  # or g.user.id != user_id  NOTE: make likes private/public?
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     user = db.get_or_404(User, user_id)
     return render_template('users/likes.jinja', user=user)
 
@@ -389,6 +390,8 @@ def add_message_like(msg_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
+    url = request.form['url']
+
     new_like = Like(user_like_id=g.user.id, message_like_id=msg_id)
     db.session.add(new_like)
 
@@ -400,14 +403,15 @@ def add_message_like(msg_id):
         db.session.rollback()
         return redirect('/')
 
-    return redirect(request.referrer)
+    return redirect(url)
 
-#FIXME: check if trying to like/unlike your own message
-#TODO: put like/unlike logic in Models (similar to follow/unfollow)
-#TODO: move these routes to User routes section (maybe?)
-#NOTE: many websites block 'request.referrer', store origin url in form data instead
+# FIXME: check if trying to like/unlike your own message
+# TODO: put like/unlike logic in Models (similar to follow/unfollow)
+# TODO: move these routes to User routes section (maybe?)
+# NOTE: many websites block 'request.referrer', store origin url in form data instead
 
-@app.post("/messages/<int:msg_id>/unlike")
+
+@ app.post("/messages/<int:msg_id>/unlike")
 def remove_message_like(msg_id):
     """Removes message from user's liked messages"""
 
@@ -416,6 +420,9 @@ def remove_message_like(msg_id):
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", 'danger')
         return redirect("/")
+
+    url = request.form['url']
+    print('!!!!!!!!!!!!!!!URL', url)
 
     q_like = db.get_or_404(Like, (g.user.id, msg_id))
     db.session.delete(q_like)
@@ -428,13 +435,13 @@ def remove_message_like(msg_id):
         db.session.rollback()
         return redirect('/')
 
-    return redirect(request.referrer)
+    return redirect(url)
 
 ##############################################################################
 # Homepage and error pages
 
 
-@app.get('/')
+@ app.get('/')
 def homepage():
     """Show homepage:
 
