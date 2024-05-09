@@ -23,33 +23,33 @@ class Like(db.Model):
     __tablename__ = 'likes'
 
     __table_args__ = (
-        db.UniqueConstraint("user_like_id", "message_like_id"),
+        db.UniqueConstraint("user_id", "message_id"),
     )
     
-    user_like_id = db.mapped_column( #TODO: consider changing var name
+    user_id = db.mapped_column( 
         db.Integer,
         db.ForeignKey('users.id', ondelete="cascade"),
         primary_key=True,
         nullable=False,
     )
 
-    message_like_id = db.mapped_column( #TODO: consider changing var name
+    message_id = db.mapped_column(
         db.Integer,
         db.ForeignKey('messages.id', ondelete="cascade"),
         primary_key=True,
         nullable=False,
     )
 
-    user_likes = db.relationship( #TODO: consider changing var name (liking_user) 
+    liking_user = db.relationship(
         "User",
-        foreign_keys=[user_like_id],
+        foreign_keys=[user_id],
         back_populates="likes",
     )
 
-    message_likes = db.relationship( #TODO: change var name (liked_message)
+    liked_message = db.relationship(
         "Message",
-        foreign_keys=[message_like_id],
-        back_populates="user_likes", #TODO: change relationship to 'likes'
+        foreign_keys=[message_id],
+        back_populates="likes",
     )
 
 
@@ -163,8 +163,7 @@ class User(db.Model):
 
     likes = db.relationship(
         'Like',
-        foreign_keys=[Like.user_like_id, Like.message_like_id], #NOTE: dont need this line, doesn't hurt tho :)
-        back_populates='user_likes', #TODO: rename
+        back_populates='liking_user',
         cascade="all, delete-orphan",
     )
 
@@ -178,7 +177,7 @@ class User(db.Model):
 
     @property
     def liked_messages(self):
-        return [like.message_likes for like in self.likes]
+        return [like.liked_message for like in self.likes]
 
     @property
     def liked_messages_ids(self):
@@ -248,6 +247,23 @@ class User(db.Model):
                  user_following_id=self.id)
              )
         dbx(q)
+        
+    def add_like(self, liked_message_id):
+        """Adds message to user likes"""
+        
+        new_like = Like(user_id=self.id, message_id=liked_message_id)
+        db.session.add(new_like)
+        
+    def remove_like(self, liked_message_id):
+        """Removes message from user likes"""
+        
+        q_like = (db
+                  .delete(Like)
+                  .filter_by(
+                      user_id=self.id,
+                      message_id=liked_message_id)
+                )
+        dbx(q_like)
 
     def is_followed_by(self, other_user):
         """Is this user followed by `other_user`?"""
@@ -297,9 +313,8 @@ class Message(db.Model):
         back_populates="messages",
     )
 
-    user_likes = db.relationship( #TODO: rename to 'likes'
+    likes = db.relationship(
         'Like',
-        foreign_keys=[Like.user_like_id, Like.message_like_id],  #NOTE: dont need this line, doesn't hurt tho :)
-        back_populates='message_likes',
+        back_populates='liked_message',
         cascade="all, delete-orphan",
     )

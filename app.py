@@ -389,11 +389,16 @@ def add_message_like(msg_id):
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
+    
+    # check if trying to like user's own message
+    msg = db.get_or_404(Message, msg_id)
+    if msg.user_id == g.user.id:
+        flash("Access unauthorized", "danger")
+        return redirect("/")
 
-    url = request.form['url']
+    origin_url = request.form['url']
 
-    new_like = Like(user_like_id=g.user.id, message_like_id=msg_id)
-    db.session.add(new_like)
+    g.user.add_like(msg_id)
 
     try:
         db.session.commit()
@@ -403,11 +408,8 @@ def add_message_like(msg_id):
         db.session.rollback()
         return redirect('/')
 
-    return redirect(url)
+    return redirect(origin_url)
 
-# FIXME: check if trying to like/unlike your own message
-# TODO: put like/unlike logic in Models (similar to follow/unfollow)
-# TODO: move these routes to User routes section (maybe?)
 # NOTE: many websites block 'request.referrer', store origin url in form data instead
 
 
@@ -420,12 +422,16 @@ def remove_message_like(msg_id):
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", 'danger')
         return redirect("/")
+    
+    # check if trying to like user's own message
+    msg = db.get_or_404(Message, msg_id)
+    if msg.user_id == g.user.id:
+        flash("Access unauthorized", "danger")
+        return redirect("/")
 
-    url = request.form['url']
-    print('!!!!!!!!!!!!!!!URL', url)
+    origin_url = request.form['url']
 
-    q_like = db.get_or_404(Like, (g.user.id, msg_id))
-    db.session.delete(q_like)
+    g.user.remove_like(msg_id)
 
     try:
         db.session.commit()
@@ -435,7 +441,7 @@ def remove_message_like(msg_id):
         db.session.rollback()
         return redirect('/')
 
-    return redirect(url)
+    return redirect(origin_url)
 
 ##############################################################################
 # Homepage and error pages
