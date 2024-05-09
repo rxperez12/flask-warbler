@@ -543,6 +543,10 @@ p.card-bio {
   z-index: 2;
 }
 
+.gold{
+  color: gold;
+}
+
 /* ================================ 404 page */
 
 .message-404 {
