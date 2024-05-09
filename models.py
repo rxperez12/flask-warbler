@@ -25,31 +25,31 @@ class Like(db.Model):
     __table_args__ = (
         db.UniqueConstraint("user_like_id", "message_like_id"),
     )
-
-    user_like_id = db.mapped_column(
+    
+    user_like_id = db.mapped_column( #TODO: consider changing var name
         db.Integer,
         db.ForeignKey('users.id', ondelete="cascade"),
         primary_key=True,
         nullable=False,
     )
 
-    message_like_id = db.mapped_column(
+    message_like_id = db.mapped_column( #TODO: consider changing var name
         db.Integer,
         db.ForeignKey('messages.id', ondelete="cascade"),
         primary_key=True,
         nullable=False,
     )
 
-    user_likes = db.relationship(
+    user_likes = db.relationship( #TODO: consider changing var name (liking_user) 
         "User",
         foreign_keys=[user_like_id],
         back_populates="likes",
     )
 
-    message_likes = db.relationship(
+    message_likes = db.relationship( #TODO: change var name (liked_message)
         "Message",
         foreign_keys=[message_like_id],
-        back_populates="user_likes",
+        back_populates="user_likes", #TODO: change relationship to 'likes'
     )
 
 
@@ -163,8 +163,8 @@ class User(db.Model):
 
     likes = db.relationship(
         'Like',
-        foreign_keys=[Like.user_like_id, Like.message_like_id],
-        back_populates='user_likes',
+        foreign_keys=[Like.user_like_id, Like.message_like_id], #NOTE: dont need this line, doesn't hurt tho :)
+        back_populates='user_likes', #TODO: rename
         cascade="all, delete-orphan",
     )
 
@@ -297,9 +297,9 @@ class Message(db.Model):
         back_populates="messages",
     )
 
-    user_likes = db.relationship(
+    user_likes = db.relationship( #TODO: rename to 'likes'
         'Like',
-        foreign_keys=[Like.user_like_id, Like.message_like_id],
+        foreign_keys=[Like.user_like_id, Like.message_like_id],  #NOTE: dont need this line, doesn't hurt tho :)
         back_populates='message_likes',
         cascade="all, delete-orphan",
     )
