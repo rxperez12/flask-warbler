@@ -423,7 +423,7 @@ def remove_message_like(msg_id):
         flash("Access unauthorized.", 'danger')
         return redirect("/")
     
-    # check if trying to like user's own message
+    # check if trying to unlike user's own message
     msg = db.get_or_404(Message, msg_id)
     if msg.user_id == g.user.id:
         flash("Access unauthorized", "danger")
