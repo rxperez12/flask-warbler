@@ -1,9 +1,10 @@
+{% from "/messages/message_macro.jinja" import build_message_list %}
 {% extends 'users/detail.jinja' %}
 {% block user_details %}
 <div class="col-sm-6">
   <ul class="list-group" id="messages">
-
-    {% for message in user.messages %}
+    {{ build_message_list(user.messages) }}
+    {# {% for message in user.messages %}
 
     <li class="list-group-item">
       <a href="/messages/{{ message.id }}" class="message-link"></a>
@@ -21,9 +22,9 @@
             </span>
         <p>{{ message.text }}</p>
       </div>
-    </li>
+    </li> #}
 
-    {% endfor %}
+    {# {% endfor %} #}
 
   </ul>
 </div>
