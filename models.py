@@ -25,8 +25,8 @@ class Like(db.Model):
     __table_args__ = (
         db.UniqueConstraint("user_id", "message_id"),
     )
-    
-    user_id = db.mapped_column( 
+
+    user_id = db.mapped_column(
         db.Integer,
         db.ForeignKey('users.id', ondelete="cascade"),
         primary_key=True,
@@ -169,15 +169,17 @@ class User(db.Model):
 
     @property
     def following(self):
+        # type: ignore
         return [follow.following_user for follow in self.following_users]
 
     @property
     def followers(self):
+        # type: ignore
         return [follow.followed_user for follow in self.followers_users]
 
     @property
     def liked_messages(self):
-        return [like.liked_message for like in self.likes]
+        return [like.liked_message for like in self.likes]  # type: ignore
 
     @property
     def liked_messages_ids(self):
@@ -201,7 +203,7 @@ class User(db.Model):
             email=email,
             password=hashed_pwd,
             image_url=image_url,
-        )
+        )  # type: ignore
 
         db.session.add(user)
         return user
@@ -234,7 +236,7 @@ class User(db.Model):
         follow = Follow(
             user_being_followed_id=other_user.id,
             user_following_id=self.id
-        )
+        )  # type: ignore
         db.session.add(follow)
 
     def unfollow(self, other_user):
@@ -247,22 +249,23 @@ class User(db.Model):
                  user_following_id=self.id)
              )
         dbx(q)
-        
+
     def add_like(self, liked_message_id):
         """Adds message to user likes"""
-        
+
+        # type: ignore
         new_like = Like(user_id=self.id, message_id=liked_message_id)
         db.session.add(new_like)
-        
+
     def remove_like(self, liked_message_id):
         """Removes message from user likes"""
-        
+
         q_like = (db
                   .delete(Like)
                   .filter_by(
                       user_id=self.id,
                       message_id=liked_message_id)
-                )
+                  )
         dbx(q_like)
 
     def is_followed_by(self, other_user):

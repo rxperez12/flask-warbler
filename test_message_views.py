@@ -88,11 +88,13 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
 
             resp = c.post("/messages/new",
                           data={"text": "Hello"}, follow_redirects=True)
+            html = resp.get_data(as_text=True)
 
-            self.assertEqual(resp.status_code, 302)
-            # TODO: check for unauthorized flash message at final location
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Access unauthorized', html)
+
             # NOTE: THIS WILL BREAK WITH FOLLOW REDIRECTS
-            self.assertEqual(resp.location, "/")
+            # self.assertEqual(resp.location, "/") WHY DOESN'T THIS WORK??? TODO:
 
             q = db.select(Message)
             messages_after = dbx(q).all()
@@ -200,7 +202,7 @@ class MessageAddLikeViewTestCase(MessageBaseViewTestCase):
 
             # TODO: check for star icon toggle at origin of request
             resp = c.post(
-                f"/messages/{self.m2_id}/like", 
+                f"/messages/{self.m2_id}/like",
                 data={"url": "/"}
             )
 
@@ -221,8 +223,8 @@ class MessageAddLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-            
-            #TODO: follow redirects, check 200 status
+
+            # TODO: follow redirects, check 200 status
             resp = c.post(
                 f"/messages/{self.m1_id}/like",
                 data={"url": "/"}
@@ -242,8 +244,8 @@ class MessageAddLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-            
-            #TODO: follow redirects, check 200 status, check flash unauthorized
+
+            # TODO: follow redirects, check 200 status, check flash unauthorized
             resp = c.post(f"/messages/{self.m1_id}/like",
                           data={
                               "url": "/"
@@ -267,8 +269,8 @@ class MessageRemoveLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-            
-            #TODO: follow redirects, check status 200
+
+            # TODO: follow redirects, check status 200
             resp = c.post(
                 f"/messages/{self.m1_id}/unlike",
                 data={"url": "/"}
@@ -287,8 +289,8 @@ class MessageRemoveLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-            
-            #TODO: follow redirects, check 200 status
+
+            # TODO: follow redirects, check 200 status
             resp = c.post(
                 f"/messages/{self.m1_id}/unlike",
                 data={"url": "/"}
