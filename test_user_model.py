@@ -3,7 +3,7 @@
 import os
 from unittest import TestCase
 
-from app import app, CURR_USER_KEY
+from app import app
 from models import db, dbx, User, Message
 from sqlalchemy import exc 
 
@@ -57,6 +57,7 @@ class UserModelTestCase(TestCase):
         self.assertEqual(len(u1.followers), 0)
 
 class UserModelIsFollowingTestCase(UserModelTestCase):
+    #TODO: split follow and unfollow separately
     def test_is_following_and_is_followed_by(self):     
         u1 = db.session.get(User, self.u1_id)
         u2 = db.session.get(User, self.u2_id)
@@ -64,6 +65,7 @@ class UserModelIsFollowingTestCase(UserModelTestCase):
         u1.follow(u2)
         db.session.commit()
         
+        #TODO: also check that u2 is not following u1
         self.assertEqual(u1.is_following(u2), True)
         self.assertEqual(u2.is_followed_by(u1), True)
         
@@ -87,10 +89,10 @@ class UserModelIsFollowingTestCase(UserModelTestCase):
         u1.follow(u2)
         db.session.commit()
         
-        u2_followers = u2.followers
+        u2_followers = u2.followers #FIXME: no need for this var, pass it directly
         self.assertIn(u1, u2_followers)
         
-        u1_following = u1.following
+        u1_following = u1.following #FIXME: no need for this var, pass it directly
         self.assertIn(u2, u1_following)
         
 
@@ -99,11 +101,13 @@ class UserModelSignupTestCase(UserModelTestCase):
         u3 = User.signup("u3", "u3@email.com", "password", None)
         db.session.commit()
         
+        #FIXME: test that all user properties exist, make sure password is encrypted
         q_user = db.select(User).where(User.id == u3.id)
         users = dbx(q_user).all()
         
         self.assertEqual(len(users), 1)
-        
+    
+    #TODO: add test for signing up duplicate username    
     def test_user_signup_bad_input(self):
         with self.assertRaises(ValueError) as e:
             User.signup("u3", "u3@email.com", None, None)
@@ -115,6 +119,7 @@ class UserModelAuthenticateTestCase(UserModelTestCase):
         u1 = db.session.get(User, self.u1_id)
         self.assertEqual(User.authenticate("u1", "password"), u1)
         
+    #FIXME: change to use assertFalse   
     def test_authenticate_bad_password(self):
         self.assertEqual(User.authenticate("u1", "password123"), False)
         
@@ -123,6 +128,7 @@ class UserModelAuthenticateTestCase(UserModelTestCase):
         
 class UserModelLikeTestCase(UserModelTestCase):
     def test_add_and_remove_like(self):
+        #TODO: check that likes start at 0
         u1 = db.session.get(User, self.u1_id)
         u1.add_like(self.m1_id)
         db.session.commit()
@@ -158,6 +164,7 @@ class UserModelLikeTestCase(UserModelTestCase):
         u1_liked_messages = u1.liked_messages
         self.assertIn(m1, u1_liked_messages)
         
+        #TODO: test this in separate method
         u1_liked_messages_ids = u1.liked_messages_ids
         self.assertIn(self.m1_id, u1_liked_messages_ids)
         
