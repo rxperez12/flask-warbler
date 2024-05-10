@@ -4,7 +4,7 @@ import os
 from unittest import TestCase
 
 from app import app, CURR_USER_KEY
-from models import db, dbx, Message, User, Like, Follow
+from models import db, dbx, Message, User, Like
 
 # To run the tests, you must provide a "test database", since these tests
 # delete & recreate the tables & data. In your shell:
@@ -37,15 +37,15 @@ class MessageBaseViewTestCase(TestCase):
         db.session.commit()
 
         u1 = User.signup("u1", "u1@email.com",
-                         "password", None)  # type: ignore
+                         "password", None)
         db.session.flush()
 
         u2 = User.signup("u2", "u2@email.com",
-                         "password", None)  # type: ignore
+                         "password", None)
         db.session.flush()
 
-        m1 = Message(text="m1-text", user_id=u1.id)  # type: ignore
-        m2 = Message(text="m2-text", user_id=u2.id)  # type: ignore
+        m1 = Message(text="m1-text", user_id=u1.id)
+        m2 = Message(text="m2-text", user_id=u2.id)
 
         db.session.add_all([m1, m2])
         db.session.commit()
@@ -56,7 +56,7 @@ class MessageBaseViewTestCase(TestCase):
         self.u2_id = u2.id
         self.m2_id = m2.id
 
-        like = Like(user_id=u2.id, message_id=m1.id)  # type: ignore
+        like = Like(user_id=u2.id, message_id=m1.id)
         db.session.add(like)
         db.session.commit()
 
@@ -80,17 +80,18 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIsNotNone(message)
 
     def test_add_message_logged_out(self):
-        # Since we need to change the session to mimic logging in,
-        # we need to use the changing-session trick:
         with app.test_client() as c:
 
             q = db.select(Message)
             messages_before = dbx(q).all()
             self.assertEqual(len(messages_before), 2)
 
-            resp = c.post("/messages/new", data={"text": "Hello"})
+            resp = c.post("/messages/new",
+                          data={"text": "Hello"}, follow_redirects=True)
 
             self.assertEqual(resp.status_code, 302)
+            # TODO: check for unauthorized flash message at final location
+            # NOTE: THIS WILL BREAK WITH FOLLOW REDIRECTS
             self.assertEqual(resp.location, "/")
 
             q = db.select(Message)
@@ -109,7 +110,7 @@ class MessageShowViewTestCase(MessageBaseViewTestCase):
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
-
+            # TODO: check that message text is there
             self.assertIn("<!-- comment for testing message show -->", html)
 
     def test_show_message_logged_out(self):
@@ -120,6 +121,7 @@ class MessageShowViewTestCase(MessageBaseViewTestCase):
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
+            # TODO: make sure message text is not there
             self.assertIn('<!-- Comment for logged out test -->', html)
 
 
@@ -134,10 +136,12 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             messages = dbx(q_msg).all()
             self.assertEqual(len(messages), 2)
 
+            # TODO: follow redirect, check for 200 instead of 302
             resp = c.post(f"/messages/{self.m1_id}/delete")
 
             self.assertEqual(resp.status_code, 302)
 
+            # TODO: try to get deleted message, check that the query gets 'None'
             q_msg_after_del = db.select(Message)
             messages_after_del = dbx(q_msg_after_del).all()
             self.assertEqual(len(messages_after_del), 1)
@@ -155,6 +159,7 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp.location, "/")
 
+            # TODO: also check that the message still exists in database
             q_msg_after_del = db.select(Message)
             messages_after_del = dbx(q_msg_after_del).all()
             self.assertEqual(len(messages_after_del), 2)
@@ -169,11 +174,13 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             messages = dbx(q_msg).all()
             self.assertEqual(len(messages), 2)
 
+            # TODO: follow redirects, check for 200 status
             resp = c.post(f"/messages/{self.m1_id}/delete")
 
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp.location, "/")
 
+            # TODO: also check that the message still exists in database
             q_msg_after_del = db.select(Message)
             messages_after_del = dbx(q_msg_after_del).all()
             self.assertEqual(len(messages_after_del), 2)
@@ -191,11 +198,11 @@ class MessageAddLikeViewTestCase(MessageBaseViewTestCase):
 
             self.assertEqual(len(likes), 1)
 
-            resp = c.post(f"/messages/{self.m2_id}/like",
-                          data={
-                              "url": "/"
-                          }
-                          )
+            # TODO: check for star icon toggle at origin of request
+            resp = c.post(
+                f"/messages/{self.m2_id}/like", 
+                data={"url": "/"}
+            )
 
             self.assertEqual(resp.status_code, 302)
 
@@ -214,12 +221,12 @@ class MessageAddLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-
-            resp = c.post(f"/messages/{self.m1_id}/like",
-                          data={
-                              "url": "/"
-                          }
-                          )
+            
+            #TODO: follow redirects, check 200 status
+            resp = c.post(
+                f"/messages/{self.m1_id}/like",
+                data={"url": "/"}
+            )
 
             self.assertEqual(resp.status_code, 302)
 
@@ -235,7 +242,8 @@ class MessageAddLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-
+            
+            #TODO: follow redirects, check 200 status, check flash unauthorized
             resp = c.post(f"/messages/{self.m1_id}/like",
                           data={
                               "url": "/"
@@ -250,7 +258,6 @@ class MessageAddLikeViewTestCase(MessageBaseViewTestCase):
 
 
 class MessageRemoveLikeViewTestCase(MessageBaseViewTestCase):
-
     def test_remove_like(self):
         with app.test_client() as c:
             with c.session_transaction() as sess:
@@ -260,12 +267,12 @@ class MessageRemoveLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-
-            resp = c.post(f"/messages/{self.m1_id}/unlike",
-                          data={
-                              "url": "/"
-                          }
-                          )
+            
+            #TODO: follow redirects, check status 200
+            resp = c.post(
+                f"/messages/{self.m1_id}/unlike",
+                data={"url": "/"}
+            )
 
             self.assertEqual(resp.status_code, 302)
 
@@ -280,12 +287,12 @@ class MessageRemoveLikeViewTestCase(MessageBaseViewTestCase):
             likes = dbx(q_like).all()
 
             self.assertEqual(len(likes), 1)
-
-            resp = c.post(f"/messages/{self.m1_id}/unlike",
-                          data={
-                              "url": "/"
-                          }
-                          )
+            
+            #TODO: follow redirects, check 200 status
+            resp = c.post(
+                f"/messages/{self.m1_id}/unlike",
+                data={"url": "/"}
+            )
 
             self.assertEqual(resp.status_code, 302)
 
