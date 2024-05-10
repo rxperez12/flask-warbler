@@ -21,7 +21,7 @@ app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SQLALCHEMY_RECORD_QUERIES'] = True
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
-toolbar = DebugToolbarExtension(app)
+# toolbar = DebugToolbarExtension(app)
 
 db.init_app(app)
 
@@ -333,7 +333,7 @@ def add_message():
     form = MessageForm()
 
     if form.validate_on_submit():
-        msg = Message(text=form.text.data)
+        msg = Message(text=form.text.data)  # type: ignore
         g.user.messages.append(msg)
         db.session.commit()
 
@@ -364,8 +364,7 @@ def delete_message(message_id):
     """
 
     form = g.csrf_form
-
-    if not g.user and not form.validate_on_submit():
+    if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -385,11 +384,10 @@ def add_message_like(msg_id):
     """Adds message to user's liked messages"""
 
     form = g.csrf_form
-
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", "danger")
         return redirect("/")
-    
+
     # check if trying to like user's own message
     msg = db.get_or_404(Message, msg_id)
     if msg.user_id == g.user.id:
@@ -422,7 +420,7 @@ def remove_message_like(msg_id):
     if not g.user or not form.validate_on_submit():
         flash("Access unauthorized.", 'danger')
         return redirect("/")
-    
+
     # check if trying to unlike user's own message
     msg = db.get_or_404(Message, msg_id)
     if msg.user_id == g.user.id:
