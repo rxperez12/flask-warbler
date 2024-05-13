@@ -47,12 +47,12 @@
             <img src="{{ g.user.image_url }}" alt="{{ g.user.username }}">
           </a>
         </li>
-        <li><a href="/messages/new">New Message</a></li>
+        <li><a href="/messages/new" class="btn btn-outline-primary">New Message</a></li>
 
         <li>
           <form action="/logout" method="POST">
             {{ g.csrf_form.hidden_tag() }}
-            <button class="btn btn-link nav-logout"> Logout
+            <button class="btn btn-danger nav-logout"> Logout
             </button>
           </form>
         </li>
