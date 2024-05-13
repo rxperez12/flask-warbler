@@ -2,24 +2,6 @@
 
 {% for msg in messages %}
 <li class="list-group-item">
-  {% if msg.user_id != g.user.id %}
-  {% if msg.id not in g.user.liked_messages_ids %}
-  <form action="/messages/{{ msg.id }}/like" method="POST" class="like-message">
-    {{ g.csrf_form.hidden_tag() }}
-    <input name='url' type="hidden" value="{{ request.path }}">
-    {# include form origin url as hidden field #}
-    <button class="btn"><i class="bi bi-star"></i></button>
-  </form>
-  {% endif %}
-  {% if msg.id in g.user.liked_messages_ids %}
-  <form action="/messages/{{ msg.id }}/unlike" method="POST" class="like-message">
-    {{ g.csrf_form.hidden_tag() }}
-    <input name='url' type="hidden" value="{{ request.path }}">
-    <button class="btn"><i class="bi bi-star-fill gold"></i></button>
-  </form>
-  {% endif %}
-  {% endif %}
-
   <a href="/messages/{{ msg.id }}" class="message-link">
     <a href="/users/{{ msg.user.id }}">
       <img src="{{ msg.user.image_url }}" alt="" class="timeline-image">
@@ -29,6 +11,24 @@
       <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
       <p>{{ msg.text }}</p>
     </div>
+
+    {% if msg.user_id != g.user.id %}
+      {% if msg.id not in g.user.liked_messages_ids %}
+      <form action="/messages/{{ msg.id }}/like" method="POST" class="like-message">
+        {{ g.csrf_form.hidden_tag() }}
+        <input name='url' type="hidden" value="{{ request.path }}">
+        {# include form origin url as hidden field #}
+        <button class="btn"><i class="bi bi-star"></i></button>
+      </form>
+      {% endif %}
+      {% if msg.id in g.user.liked_messages_ids %}
+      <form action="/messages/{{ msg.id }}/unlike" method="POST" class="like-message">
+        {{ g.csrf_form.hidden_tag() }}
+        <input name='url' type="hidden" value="{{ request.path }}">
+        <button class="btn"><i class="bi bi-star-fill gold"></i></button>
+      </form>
+      {% endif %}
+    {% endif %}
 </li>
 
 {% endfor %}
